@@ -1,0 +1,9 @@
+INPUT_IMAGES_FOLDER = '../images/'
+PREPROCESSED_IMAGES_FOLDER = '../images_scaled/'
+
+DATA_FOLDER = '../data/'
+
+DOG_BREEDS_FN = 'dog_breeds.csv'
+
+TEST_IMAGE_WIDTH = 443
+TEST_IMAGE_HEIGHT = 386
