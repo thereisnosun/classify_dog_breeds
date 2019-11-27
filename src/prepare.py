@@ -48,10 +48,13 @@ def prepare_image(image: np.ndarray, new_width, new_height):
 widths = []
 heights = []
 dog_breeds = []
-dog_breeds_count = {}
+dog_breeds_count = []
 image_folders = os.listdir(INPUT_IMAGES_FOLDER)
-os.mkdir(PREPROCESSED_IMAGES_FOLDER)
-os.mkdir(DATA_FOLDER)
+if not os.path.exists(PREPROCESSED_IMAGES_FOLDER):
+    os.mkdir(PREPROCESSED_IMAGES_FOLDER)
+if not os.path.exists(DATA_FOLDER):
+    os.mkdir(DATA_FOLDER)
+
 for folder in image_folders:
     print(folder)  
 
@@ -65,9 +68,10 @@ for folder in image_folders:
     index = folder.find('-')
     if index != -1:
         breed = folder[index+1:]
-        print(breed)
+        breed_id = folder[:index]
+        print(breed_id)
         dog_breeds.append(breed)
-        dog_breeds_count[breed] = len(dir_contents)
+        dog_breeds_count.append((breed_id, breed, len(dir_contents)))
     else:
         print('ERROR: dog breed did not match a pattern!')
 
@@ -77,7 +81,7 @@ for folder in image_folders:
 
         image = cv2.imread(full_image_path)
         curr_height, curr_width, _ = image.shape
-        print(image.shape)
+        #print(image.shape)
         
         widths.append(curr_width)
         heights.append(curr_height)
@@ -92,8 +96,9 @@ for folder in image_folders:
 dog_breeds_filename = os.path.join(DATA_FOLDER, DOG_BREEDS_FN)
 with open(dog_breeds_filename, mode='w') as dog_breeds_file:
     breed_writer = csv.writer(dog_breeds_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-    for breed, breed_count in dog_breeds_count.items():
-        breed_writer.writerow([breed, breed_count])
+    breed_writer.writerow(['breed_id', 'dog_breed', 'breed_count'])
+    for breed_id, breed, breed_count in dog_breeds_count:
+        breed_writer.writerow([breed_id, breed, breed_count])
 
 
 

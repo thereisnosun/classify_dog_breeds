@@ -18,6 +18,8 @@ import pandas as pd
 
 dog_breeds_path = os.path.join(DATA_FOLDER, DOG_BREEDS_FN)
 dog_breeds = pd.read_csv(dog_breeds_path)
+print(dog_breeds.head())
+print(dog_breeds['dog_breed'])
 
 
 model = Sequential()
@@ -40,4 +42,6 @@ model.add(Dropout(0.5))
 model.add(Dense(1))
 model.add(Activation('sigmoid'))
 
-model.compile(loss='binary_cross_entropy', optimizer='rmsprop', metrics=['accuracy'])
+model.compile(loss='binary_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
+
+print(model.summary())
