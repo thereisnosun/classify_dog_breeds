@@ -6,7 +6,8 @@ from keras.layers import Conv2D, Activation, Dense, Flatten, MaxPooling2D, Dropo
 import os
 from consts import *
 import pandas as pd
-
+import random
+from sklearn.utils import shuffle
 
 # REuired image size would be width=443; height=386
 
@@ -51,11 +52,20 @@ def load_images(path: str, dog_breeds: pd.DataFrame):
 dog_breeds_path = os.path.join(DATA_FOLDER, DOG_BREEDS_FN)
 dog_breeds = pd.read_csv(dog_breeds_path)
 print(dog_breeds.head())
-#print(dog_breeds['dog_breed'])
+print(dog_breeds.count())
+print("len is - ", len(dog_breeds))
 
 print('Loading train images...')
 train_images, images_labels, image_indexes = load_images(PREPROCESSED_IMAGES_FOLDER, dog_breeds)
 print('Train images are loaded', len(train_images), len(images_labels))
+
+print("Shuffling...")
+train_images, images_labels = shuffle(train_images, images_labels)
+print("Shuffling done", type(train_images))
+
+# cv2.imshow('image1', train_images[0])
+# cv2.waitKey(0)
+# cv2.destroyAllWindows()
 
 model = Sequential()
 model.add(Conv2D(32, (3, 3), input_shape=(TEST_IMAGE_WIDTH, TEST_IMAGE_HEIGHT, 3))) 
@@ -74,11 +84,12 @@ model.add(Flatten())
 model.add(Dense(64))
 model.add(Activation('relu'))
 model.add(Dropout(0.5))
-model.add(Dense(1))
-model.add(Activation('sigmoid'))
+#model.add(Dense(1))
+#model.add(Activation('sigmoid'))
+model.add(Dense(len(dog_breeds), activation='softmax'))
 
 #model.compile(loss='binary_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
-model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+model.compile(loss='sparse_categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
 print(model.summary())
 
 
@@ -95,7 +106,7 @@ print(train_images.shape)
 y_indexes = np.array(image_indexes)
 print(y_indexes.shape)
 
-BATCH_SIZE = 32
+BATCH_SIZE = 64
 model.fit(x=train_images, y=y_indexes, batch_size=BATCH_SIZE, epochs=10)
 
 
