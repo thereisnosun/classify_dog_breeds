@@ -1,4 +1,4 @@
-INPUT_IMAGES_FOLDER = '../images/'
+INPUT_IMAGES_FOLDER = '../images/Images/'
 PREPROCESSED_IMAGES_FOLDER = '../images_scaled/'
 
 DATA_FOLDER = '../data/'
@@ -8,5 +8,8 @@ DOG_BREEDS_FN = 'dog_breeds.csv'
 # TEST_IMAGE_WIDTH = 443
 # TEST_IMAGE_HEIGHT = 386
 
-TEST_IMAGE_WIDTH = 300
-TEST_IMAGE_HEIGHT = 300
+TEST_IMAGE_WIDTH = 224
+TEST_IMAGE_HEIGHT = 224
+
+
+MODEL_PATH = '../data/model'

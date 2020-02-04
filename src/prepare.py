@@ -3,7 +3,7 @@ from cv2 import cv2
 import os, csv
 import re
 from consts import *
-
+from utils import *
 
 
 def find_stats(array):
@@ -22,29 +22,6 @@ def find_stats(array):
     return min, max, mean
 
 
-def prepare_image(image: np.ndarray, new_width, new_height):
-    curr_height, curr_width, _  = image.shape
-    if curr_height > curr_width:
-        diff = curr_height - curr_width
-        offset = int(diff / 2)
-        if curr_height > new_height:
-            
-            image = image[offset:offset+curr_width, 0:curr_width]
-        else:
-            np.pad(image, pad_width=offset, mode='constant', constant_values=0 )
-            image = np.pad(image, pad_width=((0,0), (offset, offset), (0, 0)), mode='constant', constant_values=0)
-            pass
-    else:
-        diff = curr_width - curr_height
-        offset = int(diff / 2)
-        if curr_width > new_width:
-            image = image[0:curr_height, offset:offset+curr_height]
-        else:
-            image = np.pad(image, pad_width=((offset, offset), (0, 0), (0, 0)), mode='constant', constant_values=0)
-
-    image = cv2.resize(image, (new_width, new_height))
-    return image
-
 widths = []
 heights = []
 dog_breeds = []
@@ -56,10 +33,14 @@ if not os.path.exists(DATA_FOLDER):
     os.mkdir(DATA_FOLDER)
 
 for folder in image_folders:
+    
     print(folder)  
 
     sub_path = os.path.join(INPUT_IMAGES_FOLDER, folder)
     print(sub_path)
+    if not os.path.isdir(sub_path):
+        print('{0} is not s folder'.format(sub_path))
+        continue
     scaled_dir_path = os.path.join(PREPROCESSED_IMAGES_FOLDER + folder)
     os.mkdir(scaled_dir_path)
 
