@@ -5,7 +5,7 @@ from keras.models import Sequential
 from keras.layers import Conv2D, Activation, Dense, Flatten
 from keras.layers import MaxPooling2D, Dropout, BatchNormalization
 from keras.applications.vgg16 import VGG16
-import os
+import os, csv
 from consts import *
 import pandas as pd
 import random
@@ -77,13 +77,13 @@ def get_model():
     # model.add(Activation('relu'))
     # model.add(BatchNormalization())
     # model.add(MaxPooling2D(pool_size=(2, 2)))
-    # model.add(Dropout(0.5))
+    #model.add(Dropout(0.5))
   
     model.add(Conv2D(64, (3, 3)))
     model.add(Activation('relu'))
     model.add(BatchNormalization())
     model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Dropout(0.5))
+    #model.add(Dropout(0.5))
 
     model.add(Conv2D(128, (3, 3)))
     model.add(Activation('relu'))
@@ -98,15 +98,24 @@ def get_model():
     #model.add(Dense(1))
     #model.add(Activation('sigmoid'))
     model.add(Dense(len(dog_breeds), activation='softmax', kernel_regularizer=l2(0.01)))
+    #model.add(Dense(len(dog_breeds), activation='softmax', kernel_regularizer=l1(0.01)))
+    #model.add(Dense(len(dog_breeds), activation='softmax'))
+    print('Dog breeds len - ', len(dog_breeds))
 
-    rmsprop_opt = RMSprop(learning_rate=0.01)
+    rmsprop_opt = RMSprop(learning_rate=0.001)
     model.compile(loss='sparse_categorical_crossentropy', optimizer=rmsprop_opt, metrics=['accuracy'])
     return model
 
+def save_labels_indexes(labels: list, indexes: list):
+    with open(LABEL_INDEXES, 'w') as file_csv:
+        csv_writer = csv.writer(file_csv, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        csv_writer.writerow(['id', 'label'])
+        set_labels = set(zip(indexes, labels))    
+        for id, label in set_labels:
+            csv_writer.writerow([id, label])
+
 # def get_VGG16_model():
 #     model = 
-
-#TODO: split on validation and train sets
 
 
 dog_breeds_path = os.path.join(DATA_FOLDER, DOG_BREEDS_FN)
@@ -120,8 +129,11 @@ train_images, images_labels, image_indexes = load_images(PREPROCESSED_IMAGES_FOL
 print('Train images are loaded', len(train_images), len(images_labels))
 
 print("Shuffling {0} samples ...".format(len(train_images)))
-train_images, images_labels = shuffle(train_images, images_labels)
+train_images, images_labels, image_indexes = shuffle(train_images, images_labels, image_indexes)
 print("Shuffling done", type(train_images))
+print(type(images_labels), images_labels)
+
+
 
 SAMPLES_NUM = len(train_images)
 train_images = train_images[:SAMPLES_NUM]
@@ -136,10 +148,11 @@ print(train_images.shape)
 
 y_indexes = np.array(image_indexes)
 print(y_indexes.shape)
+save_labels_indexes(images_labels, image_indexes)
 
 
 x_train, x_validate, y_train, y_validate = train_test_split(train_images,
-     y_indexes, test_size=0.15, shuffle=True )
+     y_indexes, test_size=0.15 )
 print("Fiting data augmentation....")
 # datagen = ImageDataGenerator(
 #     featurewise_center=True,
@@ -147,11 +160,11 @@ print("Fiting data augmentation....")
 #     rotation_range=20,
 #     width_shift_range=0.2,
 #     height_shift_range=0.2,
-#     horizontal_flip=True)
+#     horizontal_flip=False)
 # datagen.fit(x_train)
 print("Validation data size - ", y_validate.shape, len(y_validate))
 BATCH_SIZE = 32
-history = model.fit(x=x_train, y=y_train, batch_size=BATCH_SIZE, epochs=5,
+history = model.fit(x=x_train, y=y_train, batch_size=BATCH_SIZE, epochs=250,
             validation_data=(x_validate, y_validate))
 # history = model.fit_generator(datagen.flow(x_train, y_train, batch_size=BATCH_SIZE), epochs=25,
 #             steps_per_epoch=len(x_train)/BATCH_SIZE, validation_data=(x_validate, y_validate))
@@ -159,8 +172,10 @@ print('\nhistory dict:', history.history)
 
 eval_model = model.evaluate(train_images, y_indexes, batch_size=BATCH_SIZE)
 print(eval_model)
+eval_model_validate = model.evaluate(x_validate, y_validate, batch_size=BATCH_SIZE)
+print(eval_model_validate)
 
-weights_path = os.path.join(DATA_FOLDER, 'first_model')
+weights_path = os.path.join(DATA_FOLDER, 'model_weights')
 model.save_weights(weights_path)
 
 model_path = os.path.join(DATA_FOLDER, 'full_model')

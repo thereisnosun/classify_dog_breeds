@@ -2,6 +2,7 @@ import numpy as np
 from cv2 import cv2
 import os, csv
 import re
+import shutil
 from consts import *
 from utils import *
 
@@ -42,6 +43,8 @@ for folder in image_folders:
         print('{0} is not s folder'.format(sub_path))
         continue
     scaled_dir_path = os.path.join(PREPROCESSED_IMAGES_FOLDER + folder)
+    if os.path.exists(scaled_dir_path):
+        shutil.rmtree(scaled_dir_path)
     os.mkdir(scaled_dir_path)
 
     dir_contents = os.listdir(sub_path)
