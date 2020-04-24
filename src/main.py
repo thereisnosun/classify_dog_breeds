@@ -20,15 +20,15 @@ from keras import backend as K
 ## required for efficient GPU use
 import tensorflow as tf
 from keras.backend import tensorflow_backend
-config = tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True))
-session = tf.Session(config=config)
-tensorflow_backend.set_session(session)
 
-print(K.tensorflow_backend._get_available_gpus())
-## required for efficient GPU use
 #the values are - 
 # (97, 3264, 442.5318756073858)
 # (100, 2562, 385.8612244897959)
+
+#for efficient GPU usage
+gpus = tf.config.experimental.list_physical_devices('GPU')
+tf.config.experimental.set_virtual_device_configuration(gpus[0], 
+[tf.config.experimental.VirtualDeviceConfiguration(memory_limit=2048)])
 
 def get_images_label_id(folder_name: str):
     index = folder_name.find('_')
@@ -73,10 +73,10 @@ def get_model():
     model.add(MaxPooling2D(pool_size=(2, 2)))
     #model.add(Dropout(0.5))
 
-    # model.add(Conv2D(32, (3, 3)))
-    # model.add(Activation('relu'))
-    # model.add(BatchNormalization())
-    # model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Conv2D(32, (3, 3)))
+    model.add(Activation('relu'))
+    model.add(BatchNormalization())
+    model.add(MaxPooling2D(pool_size=(2, 2)))
     #model.add(Dropout(0.5))
   
     model.add(Conv2D(64, (3, 3)))
