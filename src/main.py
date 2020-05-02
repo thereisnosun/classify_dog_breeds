@@ -67,42 +67,33 @@ def load_images(path: str, dog_breeds: pd.DataFrame):
 
 def get_model():
     model = Sequential()
-    model.add(Conv2D(32, (3, 3), input_shape=(TEST_IMAGE_WIDTH, TEST_IMAGE_HEIGHT, 3))) 
+    model.add(Conv2D(16, (3, 3), input_shape=(TEST_IMAGE_WIDTH, TEST_IMAGE_HEIGHT, 3))) 
     model.add(Activation('relu'))
-    model.add(BatchNormalization())
+    #model.add(BatchNormalization())
     model.add(MaxPooling2D(pool_size=(2, 2)))
-    #model.add(Dropout(0.5))
+    model.add(Dropout(0.2))
 
     model.add(Conv2D(32, (3, 3)))
     model.add(Activation('relu'))
-    model.add(BatchNormalization())
+    #model.add(BatchNormalization())
     model.add(MaxPooling2D(pool_size=(2, 2)))
-    #model.add(Dropout(0.5))
+    model.add(Dropout(0.2))
   
-    model.add(Conv2D(64, (3, 3)))
+    model.add(Conv2D(32, (3, 3)))
     model.add(Activation('relu'))
-    model.add(BatchNormalization())
+    #model.add(BatchNormalization())
     model.add(MaxPooling2D(pool_size=(2, 2)))
-    #model.add(Dropout(0.5))
-
-    model.add(Conv2D(128, (3, 3)))
-    model.add(Activation('relu'))
-    model.add(BatchNormalization())
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Dropout(0.5))
-
+    model.add(Dropout(0.2))
+   
     model.add(Flatten())
-    #model.add(Dense(64))
+    model.add(Dense(128))
+    model.add(Dropout(0.5))
     model.add(Activation('relu'))
-    #model.add(Dropout(0.5))
-    #model.add(Dense(1))
-    #model.add(Activation('sigmoid'))
-    model.add(Dense(len(dog_breeds), activation='softmax', kernel_regularizer=l2(0.01)))
-    #model.add(Dense(len(dog_breeds), activation='softmax', kernel_regularizer=l1(0.01)))
-    #model.add(Dense(len(dog_breeds), activation='softmax'))
+    #model.add(Dense(len(dog_breeds), activation='softmax', kernel_regularizer=l1(0.1)))
+    model.add(Dense(len(dog_breeds), activation='softmax'))
     print('Dog breeds len - ', len(dog_breeds))
 
-    rmsprop_opt = RMSprop(learning_rate=0.001)
+    rmsprop_opt = RMSprop(learning_rate=0.00003)
     model.compile(loss='sparse_categorical_crossentropy', optimizer=rmsprop_opt, metrics=['accuracy'])
     return model
 
@@ -113,9 +104,6 @@ def save_labels_indexes(labels: list, indexes: list):
         set_labels = set(zip(indexes, labels))    
         for id, label in set_labels:
             csv_writer.writerow([id, label])
-
-# def get_VGG16_model():
-#     model = 
 
 
 dog_breeds_path = os.path.join(DATA_FOLDER, DOG_BREEDS_FN)
@@ -131,9 +119,7 @@ print('Train images are loaded', len(train_images), len(images_labels))
 print("Shuffling {0} samples ...".format(len(train_images)))
 train_images, images_labels, image_indexes = shuffle(train_images, images_labels, image_indexes)
 print("Shuffling done", type(train_images))
-print(type(images_labels), images_labels)
-
-
+#print(type(images_labels), images_labels)
 
 SAMPLES_NUM = len(train_images)
 train_images = train_images[:SAMPLES_NUM]
@@ -153,28 +139,63 @@ save_labels_indexes(images_labels, image_indexes)
 
 x_train, x_validate, y_train, y_validate = train_test_split(train_images,
      y_indexes, test_size=0.15 )
-print("Fiting data augmentation....")
-# datagen = ImageDataGenerator(
-#     featurewise_center=True,
-#     featurewise_std_normalization=True,
-#     rotation_range=20,
-#     width_shift_range=0.2,
-#     height_shift_range=0.2,
-#     horizontal_flip=False)
-# datagen.fit(x_train)
-print("Validation data size - ", y_validate.shape, len(y_validate))
 BATCH_SIZE = 32
-history = model.fit(x=x_train, y=y_train, batch_size=BATCH_SIZE, epochs=250,
-            validation_data=(x_validate, y_validate))
-# history = model.fit_generator(datagen.flow(x_train, y_train, batch_size=BATCH_SIZE), epochs=25,
-#             steps_per_epoch=len(x_train)/BATCH_SIZE, validation_data=(x_validate, y_validate))
-print('\nhistory dict:', history.history)
+print("Fiting data augmentation....")
+if not os.path.exists(GEN_TRAIN_IMAGES):
+    os.mkdir(GEN_TRAIN_IMAGES)
 
-eval_model = model.evaluate(train_images, y_indexes, batch_size=BATCH_SIZE)
-print(eval_model)
-eval_model_validate = model.evaluate(x_validate, y_validate, batch_size=BATCH_SIZE)
-print(eval_model_validate)
+if not os.path.exists(GEN_VALIDATE_IMAGES):
+    os.mkdir(GEN_VALIDATE_IMAGES)
 
+def run(model):
+    history = model.fit(x=x_train, y=y_train, batch_size=BATCH_SIZE, epochs=300,
+                validation_data=(x_validate, y_validate))
+
+    print('\nhistory dict:', history.history)
+
+    eval_model = model.evaluate(train_images, y_indexes, batch_size=BATCH_SIZE)
+    print(eval_model)
+    eval_model_validate = model.evaluate(x_validate, y_validate, batch_size=BATCH_SIZE)
+    print(eval_model_validate)
+    return model
+
+
+def run_with_generators(model):
+    datagen = ImageDataGenerator(
+        shear_range=0.2,
+        zoom_range=0.2,
+        rescale=1./255,
+        horizontal_flip=True,
+        fill_mode='nearest')
+    datagen_valid = ImageDataGenerator(rescale=1./255)
+
+    TARGET_SIZE =(TEST_IMAGE_WIDTH, TEST_IMAGE_HEIGHT)
+    train_generator = datagen.flow_from_directory('../images/images_train5', target_size=TARGET_SIZE,
+        batch_size=BATCH_SIZE, class_mode='sparse',
+        save_to_dir=GEN_TRAIN_IMAGES, save_format='jpeg')
+    valid_generator = datagen_valid.flow_from_directory('../images/images_validate5', target_size=TARGET_SIZE,
+        batch_size=BATCH_SIZE, class_mode='sparse',
+        save_to_dir=GEN_VALIDATE_IMAGES, save_format='jpeg')
+
+    # train_generator = datagen.flow(x_train, y_train, batch_size=BATCH_SIZE,
+    #     save_to_dir=GEN_TRAIN_IMAGES, save_format='jpeg')
+    # valid_generator = datagen_valid.flow(x_validate, y_validate,  batch_size=BATCH_SIZE,
+    #     save_to_dir=GEN_VALIDATE_IMAGES, save_format='jpeg',)
+    history = model.fit_generator(train_generator, epochs=300,
+            steps_per_epoch=100, validation_data=valid_generator)
+    print('\nhistory dict:', history.history)
+    eval_model = model.evaluate_generator(train_generator)
+    print(eval_model)
+
+    eval_model_valid = model.evaluate_generator(valid_generator)
+    print(eval_model_valid)
+    return model
+            
+
+print("Validation data size - ", y_validate.shape, len(y_validate))
+
+model = run_with_generators(model)
+#model = run(model)
 weights_path = os.path.join(DATA_FOLDER, 'model_weights')
 model.save_weights(weights_path)
 
