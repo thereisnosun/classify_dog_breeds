@@ -22,8 +22,8 @@ nb_train_samples = 736
 nb_validation_samples = 192
 epochs = 50
 
-def save_bottlebeck_features():
-    datagen = ImageDataGenerator(rescale=1. / 255)
+def save_bottleneck_features():
+    datagen = ImageDataGenerator(rescale=1./255)
 
     model = applications.VGG16(include_top=False, weights='imagenet')
 
@@ -83,5 +83,52 @@ def train_top_model():
     print(test_eval)
     model.save_weights(BOTTLENECK_WEIGTHS)
 
-save_bottlebeck_features()
+
+def fine_tune_model():
+    model = applications.VGG16(weights='imagenet', include_top=False)
+
+    top_model = Sequential()
+    top_model.add(Flatten(input_shape=model.output_shape[1:]))
+    top_model.add(Dense(256, activation='relu'))
+    top_model.add(Dropout(0.5))
+    top_model.add(Dense(5, activation='softmax'))
+
+    top_model.load_weights(WEIGHTS_PATH)
+    model.add(top_model)
+
+    for layer in model.layers[:25]:
+        layer.trainable = False
+    
+    model.compile(loss='sparse_categorical_crossentropy',
+            optimizer=SGD(lr=1e-4, momentum=0.9),
+            metrics=['accuracy'])
+    
+    train_datagen = ImageDataGenerator(
+        rescale=1./255,
+        shear_range=0.2,
+        zoom_range=0.2,
+        horizontal_flip=True)
+    
+    train_generator = train_datagen.flow_from_directory(
+        TRAIN_TRANSFORM_DIR,
+        target_size=(TEST_IMAGE_HEIGHT, TEST_IMAGE_WIDTH),
+        batch_size=BATCH_SIZE,
+        class_mode=None)
+
+    validation_generator = test_datagen.flow_from_directory(
+        TEST_TRANSFORM_DIR,
+        target_size=(TEST_IMAGE_HEIGHT, TEST_IMAGE_WIDTH),
+        batch_size=BATCH_SIZE,
+        class_mode=None)
+
+    model.fit_generator(
+        train_generator,
+        samples_per_epoch=nb_train_samples,
+        epochs=epochs,
+        validation_data=validation_generator,
+        nb_val_samples=nb_validation_samples)
+
+test_datagen = ImageDataGenerator(rescale=1. / 255)
+
+save_bottleneck_features()
 train_top_model()
