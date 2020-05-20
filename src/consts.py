@@ -14,6 +14,7 @@ TEST_IMAGE_HEIGHT = 128
 SEED_VALUE = 42
 
 BATCH_SIZE = 32
+EPOCH_NUMS = 200
 
 MODEL_PATH = '../data/full_model'
 WEIGHTS_PATH = '../data/model_weights'

@@ -20,7 +20,7 @@ if len(gpus) > 0:
 
 nb_train_samples = 736
 nb_validation_samples = 192
-epochs = 50
+epochs = 150
 
 def save_bottleneck_features():
     datagen = ImageDataGenerator(rescale=1./255)
@@ -85,21 +85,29 @@ def train_top_model():
 
 
 def fine_tune_model():
-    model = applications.VGG16(weights='imagenet', include_top=False)
+    input_model_shape = (TEST_IMAGE_WIDTH, TEST_IMAGE_HEIGHT, 3)
+    model = applications.VGG16(weights='imagenet', include_top=False,
+        input_shape=input_model_shape)
 
     top_model = Sequential()
+    #print()
     top_model.add(Flatten(input_shape=model.output_shape[1:]))
     top_model.add(Dense(256, activation='relu'))
     top_model.add(Dropout(0.5))
     top_model.add(Dense(5, activation='softmax'))
+    #top_model.build(input_shape=model.output_shape[1:])
 
-    top_model.load_weights(WEIGHTS_PATH)
-    model.add(top_model)
+    print(top_model.summary())
+
+    top_model.load_weights(BOTTLENECK_WEIGTHS)
+    new_model = Sequential()
+    new_model.add(model)
+    new_model.add(top_model)
 
     for layer in model.layers[:25]:
         layer.trainable = False
     
-    model.compile(loss='sparse_categorical_crossentropy',
+    new_model.compile(loss='sparse_categorical_crossentropy',
             optimizer=SGD(lr=1e-4, momentum=0.9),
             metrics=['accuracy'])
     
@@ -113,22 +121,30 @@ def fine_tune_model():
         TRAIN_TRANSFORM_DIR,
         target_size=(TEST_IMAGE_HEIGHT, TEST_IMAGE_WIDTH),
         batch_size=BATCH_SIZE,
-        class_mode=None)
+        class_mode='sparse')
 
+    test_datagen = ImageDataGenerator(rescale=1. / 255)
     validation_generator = test_datagen.flow_from_directory(
         TEST_TRANSFORM_DIR,
         target_size=(TEST_IMAGE_HEIGHT, TEST_IMAGE_WIDTH),
         batch_size=BATCH_SIZE,
-        class_mode=None)
+        class_mode='sparse')
 
-    model.fit_generator(
+    new_model.fit_generator(
         train_generator,
-        samples_per_epoch=nb_train_samples,
+        steps_per_epoch=nb_train_samples // BATCH_SIZE,
         epochs=epochs,
         validation_data=validation_generator,
-        nb_val_samples=nb_validation_samples)
+        validation_steps=nb_validation_samples // BATCH_SIZE)
 
-test_datagen = ImageDataGenerator(rescale=1. / 255)
+    train_eval = new_model.evaluate_generator(train_generator)
+    print(train_eval)
 
-save_bottleneck_features()
-train_top_model()
+    test_eval = new_model.evaluate_generator(validation_generator)
+    print(test_eval)
+
+
+
+# save_bottleneck_features()
+# train_top_model()
+fine_tune_model()
