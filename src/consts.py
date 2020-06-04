@@ -8,8 +8,8 @@ DOG_BREEDS_FN = 'dog_breeds5.csv'
 # TEST_IMAGE_WIDTH = 443
 # TEST_IMAGE_HEIGHT = 386
 
-TEST_IMAGE_WIDTH = 128
-TEST_IMAGE_HEIGHT = 128
+TEST_IMAGE_WIDTH = 256
+TEST_IMAGE_HEIGHT = 256
 
 SEED_VALUE = 42
 
@@ -32,4 +32,9 @@ TEST_TRANSFORM_DIR = '../images/images5_validate'
 BOTTLENECK_FEATURES_TRAIN = '../data/bottleneck_features_train.npy'
 BOTTLENECK_FEATURES_TEST = '../data/bottleneck_features_validation.npy'
 
-BOTTLENECK_WEIGTHS = '../data/bottleneck_fc_model.h5'
+BOTTLENECK_WEIGTHS = '../data/bottleneck_fc_weights.h5'
+BOTTLENECK_FULL_MODEL = '../data/bottleneck_full_model.h5'
+
+
+FINETUNE_WEIGHTS = '../data/finetuned_wegihts.h5'
+FINETUNE_FULL_MODEL = '../data/finetuned_full_model.h5'

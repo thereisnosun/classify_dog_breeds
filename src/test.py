@@ -26,6 +26,11 @@ if not model:
     print('Model is not specified. Will use the default one.')
     model = MODEL_PATH
 
+weights = args.weights
+if not weights:
+    print("Weights are not specified. Will use default one")
+    weights = WEIGHTS_PATH
+
 
 
 image = cv2.imread(image_path)
@@ -36,16 +41,19 @@ if image is None:
 indexes_labels_df = pd.read_csv(LABEL_INDEXES) 
   
 prepared_image = prepare_image(image,  TEST_IMAGE_WIDTH, TEST_IMAGE_HEIGHT)
-prepared_image = np.expand_dims(prepared_image, axis=0) # adding 4th dimennsion for the model
 # cv2.imshow('image1', prepared_image)
 # cv2.waitKey(0)
 # cv2.destroyAllWindows()
+prepared_image = prepared_image * (1.0/255.0)
+cv2.imwrite('./test_image.jpg', prepared_image)
+prepared_image = np.expand_dims(prepared_image, axis=0) # adding 4th dimennsion for the model
+
 
 print("loading the model...")
 model = load_model(model)
-model.load_weights(WEIGHTS_PATH)
-print("Model is loaded")
-pred_result = model.predict(prepared_image)
+model.load_weights(weights)
+#print("Model is loaded: \n", model.summary())
+pred_result = model.predict(prepared_image, batch_size=1)
 
 print(type(pred_result), pred_result, pred_result.shape)
 max_prediction = np.amax(pred_result)
@@ -56,3 +64,4 @@ prediction_label = indexes_labels_df.loc[indexes_labels_df['id'] == prediction_i
 print(prediction_label)
 print('-----------')
 print( prediction_label['label'].to_string())
+print( indexes_labels_df)
